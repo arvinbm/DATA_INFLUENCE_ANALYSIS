@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const fileInput = document.getElementById("file-input");
       const file = fileInput.files[0];
       if (!file) {
-        alert("Please upload a CSV file.");
+        alert("Please upload a CSV file");
         return;
       }
   
@@ -26,17 +26,18 @@ document.addEventListener("DOMContentLoaded", () => {
           alert("Error: " + data.error);
           return;
         }
+
+        console.log("Server response:", data);
   
         fillTable("loo-positive", data.loo.positive);
         fillTable("loo-negative", data.loo.negative);
-        fillTable("shap-positive", data.shapely.positive);
-        fillTable("shap-negative", data.shapely.negative);
+        fillTable("shap-influential", data.shapely.top_5_influential);
   
       } catch (err) {
         alert("Something went wrong: " + err.message);
       }
     });
-  
+    
     function fillTable(tableId, rows) {
       const tbody = document.getElementById(tableId).querySelector("tbody");
       tbody.innerHTML = "";

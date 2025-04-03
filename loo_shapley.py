@@ -7,12 +7,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 def perform_hot_one_encoding(X_train, X_test, y_train, y_test):
-    # OneHotEncode X
-    encoder_X = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
-    encoder_X.fit(X_train)
-
-    X_train_encoded = pd.DataFrame(encoder_X.transform(X_train), columns=encoder_X.get_feature_names_out())
-    X_test_encoded = pd.DataFrame(encoder_X.transform(X_test), columns=encoder_X.get_feature_names_out())
+    # Drop the date column (Unique for each row; thus, will not contribute to the overall score)
+    X_train_encoded = X_train.drop(columns=['date'], errors='ignore')
+    X_test_encoded = X_test.drop(columns=['date'], errors='ignore')
 
     # LabelEncode y
     label_encoder = LabelEncoder()
@@ -26,8 +23,8 @@ def load_and_prepare_data(csv_file_path):
     df = pd.read_csv(csv_file_path)
 
     # Separate features and labels
-    X = df.drop(columns=['target'])
-    y = df['target']
+    X = df.drop(columns=['weather'])
+    y = df['weather']
 
     # split the dataset into the train and test datasets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -39,7 +36,8 @@ def load_and_prepare_data(csv_file_path):
 
 
 def train_random_forest_classifier(X, y):
-    model = RandomForestClassifier()
+    # Use lower number of trees to make shapley value computation more efficient
+    model = RandomForestClassifier(n_estimators=10)
     model.fit(X, y);
     return model
 
@@ -85,41 +83,36 @@ def compute_shapely_values(base_model, X_train, y_train, X_test, y_test):
     # Using the shap library to compute Shapley values because computing these
     # values manually without approximations is NP-complete
     shapely_result = {
-        "positive": [],
-        "negative": []
+        "top_5_influential": []
     }
 
-    # Compute the shapley values
-    explainer = shap.TreeExplainer(base_model)
-    shapley_values = explainer.shap_values(X_train)
+    # Compute the Shapley values
+    explainer = shap.Explainer(base_model.predict_proba, X_train)
+    shapley_values = explainer(X_train)
 
-    # Extract the shapley values for class 1
-    if isinstance(shapley_values, list):
-        shapley_values = shapley_values[1]
+    # Extract the raw SHAP value array
+    shapley_values_array = shapley_values.values
 
-    # Sum all the shapley values corresponding to each feature for each data point
-    summed_shapley_values = np.sum(shapley_values, axis=1)
+    # Sum over all features and classes to get total absolute impact per sample
+    total_influence = np.sum(np.abs(shapley_values_array), axis=(1, 2))
 
-    # Construct a list of tuples which contains the index & the total shap value for each data point
-    indexed_shapley_values = []
-    for index, value in enumerate(summed_shapley_values):
-        indexed_shapley_values.append((index, value))
+    # Get top 5 most influential samples
+    top_5 = sorted(enumerate(total_influence), key=lambda x: x[1], reverse=True)[:5]
 
-    # Sort the list of tuples based on the value
-    indexed_shapley_values.sort(key=lambda x: x[1], reverse=True)
-
-    # Collect the top 5 most positive and negative influential data points
-    for index, value in indexed_shapley_values[:5]:
-        shapely_result["positive"].append({"index" : index, "value" : round(value, 5)})
-    
-    for index, value in indexed_shapley_values[-5:]:
-        shapely_result["negative"].append({"index": index, "value": round(value, 5)})
+    # Store the result
+    for index, value in top_5:
+        shapely_result["top_5_influential"].append({
+            "index": index,
+            "value": round(value, 5)
+        })
 
     return shapely_result
 
 def get_loo_shapely_results(csv_file_path):
     # Load the data and prepare for training the model
-    X_train, y_train, X_test, y_test = load_and_prepare_data(csv_file_path)
+    X_train, X_test, y_train, y_test = load_and_prepare_data(csv_file_path)
+
+    print(y_train)
 
     # Train the model (RandomForestClassifier)
     base_model = train_random_forest_classifier(X_train, y_train)
@@ -133,5 +126,5 @@ def get_loo_shapely_results(csv_file_path):
         "loo": loo_result,
         "shapely": shapely_result
     }
-    
+
     return loo_shapely_results

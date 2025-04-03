@@ -43,4 +43,4 @@ def handle_uploaded_file():
         return jsonify({"ERROR" : str(error)}), 500 # Server Error 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5050)
