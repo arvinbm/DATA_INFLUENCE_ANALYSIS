@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Influence Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='script.js') }}"></script>       
+</head>
+<body>
+
+  <h1>Influence Analyzer</h1>
+
+  <p>Upload your CSV file to analyze the top 5 most positively and negatively influential data points using LOO and Shapley value methods.</p>
+
+  <form id="upload-form" enctype="multipart/form-data">
+    <input type="file" name="file" id="file-input" accept=".csv" required />
+    <button type="submit">Upload and Analyze</button>
+  </form>
+
+  <div class="tables">
+    <table id="loo-positive">
+      <thead>
+        <tr><th colspan="2">Leave-One-Out - Top 5 Most Positive</th></tr>
+        <tr><th>Index</th><th>Change In Accuracy</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <table id="loo-negative">
+      <thead>
+        <tr><th colspan="2">Leave-One-Out - Top 5 Most Negative</th></tr>
+        <tr><th>Index</th><th>Change In Accuracy</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="tables">
+    <table id="shap-influential">
+      <thead>
+        <tr><th colspan="2">Shapley - Top 5 Most Influential</th></tr>
+        <tr><th>Index</th><th>Impact Value</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</body>
+</html>
