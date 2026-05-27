@@ -2,16 +2,16 @@ import shap
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-def perform_hot_one_encoding(X_train, X_test, y_train, y_test):
-    # Drop the date column (Unique for each row; thus, will not contribute to the overall score)
+def encode_features(X_train, X_test, y_train, y_test):
+    # Drop the date column (unique per row; contributes no predictive signal)
     X_train_encoded = X_train.drop(columns=['date'], errors='ignore')
     X_test_encoded = X_test.drop(columns=['date'], errors='ignore')
 
-    # LabelEncode y
+    # Label-encode the target variable
     label_encoder = LabelEncoder()
     y_train_encoded = label_encoder.fit_transform(y_train.values.ravel())
     y_test_encoded = label_encoder.transform(y_test.values.ravel())
@@ -22,15 +22,16 @@ def load_and_prepare_data(csv_file_path):
     # Load CSV
     df = pd.read_csv(csv_file_path)
 
-    # Separate features and labels
-    X = df.drop(columns=['weather'])
-    y = df['weather']
+    # Use the last column as the target label (avoids hardcoding a column name)
+    target_col = df.columns[-1]
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
 
     # split the dataset into the train and test datasets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Perform one-hot encoding to be compatible with the RandomForestClassifier
-    X_train_encoded, X_test_encoded, y_train_encoded, y_test_encoded = perform_hot_one_encoding(X_train, X_test, y_train, y_test)
+    X_train_encoded, X_test_encoded, y_train_encoded, y_test_encoded = encode_features(X_train, X_test, y_train, y_test)
 
     return X_train_encoded, X_test_encoded, y_train_encoded, y_test_encoded
 
