@@ -2,47 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Influence Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Influence Analyzer</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="{{ url_for('static', filename='script.js') }}"></script>       
 </head>
 <body>
 
-  <h1>Influence Analyzer</h1>
+  <header>
+    <h1>Data Influence Analyzer</h1>
+    <p class="subtitle">Upload a CSV dataset to discover which data points matter most to your model's predictions.</p>
+  </header>
 
-  <p>Upload your CSV file to analyze the top 5 most positively and negatively influential data points using LOO and Shapley value methods.</p>
+  <main>
+    <section class="upload-section">
+      <form id="upload-form" enctype="multipart/form-data">
+        <label for="file-input" class="file-label">
+          <span id="file-label-text">Choose a CSV file…</span>
+          <input type="file" name="file" id="file-input" accept=".csv" required />
+        </label>
+        <button type="submit" id="submit-btn">Upload &amp; Analyze</button>
+      </form>
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <span>Analyzing your data… this may take a moment.</span>
+      </div>
+      <div id="error-box" class="error-box hidden"></div>
+    </section>
 
-  <form id="upload-form" enctype="multipart/form-data">
-    <input type="file" name="file" id="file-input" accept=".csv" required />
-    <button type="submit">Upload and Analyze</button>
-  </form>
+    <section id="results" class="results hidden">
+      <h2 class="results-heading">Analysis Results</h2>
 
-  <div class="tables">
-    <table id="loo-positive">
-      <thead>
-        <tr><th colspan="2">Leave-One-Out - Top 5 Most Positive</th></tr>
-        <tr><th>Index</th><th>Change In Accuracy</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+      <div class="tables-row">
 
-    <table id="loo-negative">
-      <thead>
-        <tr><th colspan="2">Leave-One-Out - Top 5 Most Negative</th></tr>
-        <tr><th>Index</th><th>Change In Accuracy</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+        <div class="table-card">
+          <div class="card-header positive-header">
+            <h3>Most Helpful Points</h3>
+          </div>
+          <p class="card-desc">
+            These data points <strong>help</strong> the model make better predictions.
+            Removing any of them causes accuracy to drop — they carry patterns the model relies on.
+            Think of them as the most informative examples in your dataset.
+          </p>
+          <table id="loo-positive">
+            <thead>
+              <tr><th>Row #</th><th>Accuracy Impact</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="table-footnote">Measured by Leave-One-Out retraining. A negative impact means removing this row hurt the model.</p>
+        </div>
 
-  <div class="tables">
-    <table id="shap-influential">
-      <thead>
-        <tr><th colspan="2">Shapley - Top 5 Most Influential</th></tr>
-        <tr><th>Index</th><th>Impact Value</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+        <div class="table-card">
+          <div class="card-header negative-header">
+            <h3>Potentially Problematic Points</h3>
+          </div>
+          <p class="card-desc">
+            These data points may be <strong>hurting</strong> the model. Removing them actually
+            improves accuracy — they could be mislabelled, noisy, or outliers.
+            These are worth reviewing manually.
+          </p>
+          <table id="loo-negative">
+            <thead>
+              <tr><th>Row #</th><th>Accuracy Impact</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="table-footnote">Measured by Leave-One-Out retraining. A positive impact means removing this row helped the model.</p>
+        </div>
+
+        <div class="table-card">
+          <div class="card-header shap-header">
+            <h3>Most Influential Points</h3>
+          </div>
+          <p class="card-desc">
+            These data points have the <strong>strongest overall influence</strong> on the model's
+            decisions across all features. They shape how the model thinks — regardless of
+            whether that influence is positive or negative.
+          </p>
+          <table id="shap-influential">
+            <thead>
+              <tr><th>Row #</th><th>Influence Score</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="table-footnote">Measured by Shapley values — a game-theory method that fairly attributes each point's total contribution.</p>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Powered by scikit-learn &middot; SHAP &middot; Flask</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
