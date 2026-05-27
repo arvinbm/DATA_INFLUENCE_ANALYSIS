@@ -25,8 +25,8 @@ def handle_uploaded_file():
     
     # Check if a file was selected by the user
     uploaded_filename = request.files["file"]
-    if uploaded_filename == '':
-        return jsonify({"ERROR": "No File Selected"}), 400 
+    if uploaded_filename.filename == '':
+        return jsonify({"ERROR": "No File Selected"}), 400
     
     # Save the uploaded file in the specified folder
     # Remove any unwanted characters in the filename which could have been added by the browser
